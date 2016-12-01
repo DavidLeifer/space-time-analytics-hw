@@ -2,41 +2,42 @@ import random
 
 from mesa import Model
 from mesa.datacollection import DataCollector
-from mesa.space import Grid
+from mesa.space import Grid, MultiGrid, ContinuousSpace #might have to edit this
 from mesa.time import RandomActivation
+from mesa.batchrunner import BatchRunner
 
-from examples.ForestFire.forest_fire.agent import TreeCell
+from agent import TreeCell #might have to edit this
+#from fake_surface import fake_surface
+
+class demmodel(Model):
+
+    _grid = None
+    #change torus boolean to density for visualization in the example
+    def __init__(self, x_max, y_max, torus, x_min=0, y_min=0,
+                 grid_width=100, grid_height=100):
+
+        self.x_min = x_min
+        self.x_max = x_max
+        self.torus = torus
+        #self.density = density
+        self.width = x_max - x_min
+        self.y_min = y_min
+        self.y_max = y_max
+        self.height = y_max - y_min
+
+        self.cell_width = (self.x_max - self.x_min) / grid_width
+        self.cell_height = (self.y_max - self.y_min) / grid_height
 
 
-class ForestFire(Model):
-    """
-    Simple Forest Fire model.
-    """
-    def __init__(self, height, width, density):
-        """
-        Create a new forest fire model.
-
-        Args:
-            height, width: The size of the grid to model
-            density: What fraction of grid cells have a tree in them.
-        """
-        # Initialize model parameters
-        self.height = height
-        self.width = width
-        self.density = density
-
-        # Set up model objects
         self.schedule = RandomActivation(self)
-        self.grid = Grid(height, width, torus=False)
+        self.grid = MultiGrid(grid_width, grid_height, torus)
 
-        self.datacollector = DataCollector(
-            {"Fine": lambda m: self.count_type(m, "Fine"),
-             "On Fire": lambda m: self.count_type(m, "On Fire"),
-             "Burned Out": lambda m: self.count_type(m, "Burned Out")})
+        self.datacollector = DataCollector({"Fine": lambda m: self.count_type(m, "Fine"),"On Fire": lambda m: self.count_type(m, "On Fire"),"Burned Out": lambda m: self.count_type(m, "Burned Out")})
+
 
         # Place a tree in each cell with Prob = density
         for (contents, x, y) in self.grid.coord_iter():
-            if random.random() < self.density:
+            if random.random() < torus:
                 # Create a tree
                 new_tree = TreeCell((x, y), self)
                 # Set all trees in the first column on fire.
